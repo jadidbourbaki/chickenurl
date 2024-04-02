@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"sync"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -26,7 +29,31 @@ func init() {
 
 func main() {
 	http.HandleFunc("/", mainHandler)
+	go saveMapsToFile()
+
 	http.ListenAndServe(":8080", nil)
+}
+
+func writeMapToGob(theMap map[string]string, filename string) {
+	var buf bytes.Buffer
+
+	enc := gob.NewEncoder(&buf)
+
+	urlMutex.Lock()
+	enc.Encode(theMap)
+	urlMutex.Unlock()
+
+	os.WriteFile(filename, buf.Bytes(), 0644)
+	zap.L().Info("written map to file: " + filename)
+}
+
+func saveMapsToFile() {
+	for {
+		writeMapToGob(urlToShortMap, "urlToShortMap.gob")
+		writeMapToGob(shortToUrlMap, "shortToUrlMap.gob")
+
+		time.Sleep(1 * time.Second)
+	}
 }
 
 func mainHandler(w http.ResponseWriter, r *http.Request) {
