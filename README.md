@@ -1,15 +1,34 @@
 # chickenurl
 
-Very simple to build 
+To build: 
 
 ```
 go build .
 ```
 
-Very simple to deploy, just run the built binary.
+To deploy, just run the built binary:
 
-Very simple to test. 
+
+Unit tests:
 
 ```
 go test 
+```
+
+Integration tests:
+
+```
+test_curl_put.bash
+```
+
+Then use the output of the above script, let's say it's `ABCDEF`:
+
+```
+test_curl_get.bash ABCDEF
+```
+
+and 
+
+```
+test_curl_delete.bash ABCDEF
 ```

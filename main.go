@@ -5,12 +5,14 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"sync"
 
 	"go.uber.org/zap"
 )
 
 var urlToShortMap = make(map[string]string)
 var shortToUrlMap = make(map[string]string)
+var urlMutex = sync.Mutex{}
 
 func init() {
 	// Load production quality logger
@@ -55,7 +57,10 @@ func getHandler(w http.ResponseWriter, r *http.Request) {
 
 	stringifiedShortKey := string(shortKey)
 
+	urlMutex.Lock()
 	gotUrl, ok := shortToUrlMap[stringifiedShortKey]
+	urlMutex.Unlock()
+
 	if !ok {
 		fmt.Fprintf(w, "short key not fund %v", stringifiedShortKey)
 		return
@@ -73,15 +78,21 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 
 	stringifiedUrl := string(url)
 
+	urlMutex.Lock()
 	gotShortKey, ok := urlToShortMap[stringifiedUrl]
+	urlMutex.Unlock()
+
 	if ok {
 		fmt.Fprintf(w, "url %v shortened to %v", stringifiedUrl, gotShortKey)
 		return
 	}
 
 	shortKey := urlToShort()
+
+	urlMutex.Lock()
 	shortToUrlMap[shortKey] = stringifiedUrl
 	urlToShortMap[stringifiedUrl] = shortKey
+	urlMutex.Unlock()
 
 	fmt.Fprintf(w, "url %v shortened to %v", stringifiedUrl, shortKey)
 }
@@ -95,15 +106,19 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 
 	stringifiedShortKey := string(shortKey)
 
+	urlMutex.Lock()
 	gotUrl, ok := shortToUrlMap[stringifiedShortKey]
+	urlMutex.Unlock()
 
 	if !ok {
 		fmt.Fprintf(w, "short url %v not found", stringifiedShortKey)
 		return
 	}
 
+	urlMutex.Lock()
 	delete(shortToUrlMap, stringifiedShortKey)
 	delete(urlToShortMap, gotUrl)
+	urlMutex.Unlock()
 
 	fmt.Fprintf(w, "short url %v deleted", stringifiedShortKey)
 }
