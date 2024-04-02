@@ -25,6 +25,37 @@ func init() {
 	}
 
 	zap.ReplaceGlobals(logger)
+
+	dat, err := os.ReadFile("urlToShortMap.gob")
+	if err != nil {
+		zap.L().Info("No previous data found. Continuing.")
+		return
+	} else {
+		buf := bytes.NewBuffer(dat)
+		dec := gob.NewDecoder(buf)
+
+		urlMutex.Lock()
+		dec.Decode(&urlToShortMap)
+		urlMutex.Unlock()
+	}
+
+	dat, err = os.ReadFile("shortToUrlMap.gob")
+	if err != nil {
+		zap.L().Info("No previous data found. Continuing.")
+		for k := range urlToShortMap {
+			delete(urlToShortMap, k)
+		}
+		return
+	} else {
+		buf := bytes.NewBuffer(dat)
+		dec := gob.NewDecoder(buf)
+
+		urlMutex.Lock()
+		dec.Decode(&shortToUrlMap)
+		urlMutex.Unlock()
+	}
+
+	zap.L().Info("Data loaded from file")
 }
 
 func main() {

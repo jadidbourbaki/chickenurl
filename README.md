@@ -1,5 +1,11 @@
 # chickenurl
 
+- Data is persistent with a configurable SLA of 1 second
+- O(1) lookups for hash and url
+- Production-level logging
+- Stress tested with curl
+- Integration tested with curl
+
 To build: 
 
 ```
